@@ -18,10 +18,10 @@ export const filaments = createTable(
   "filament",
   (d) => ({
     id: d.integer({ mode: "number" }).primaryKey({ autoIncrement: true }),
-    name: d.text({ length: 256 }).notNull(),
     brand: d.text({ length: 128 }).notNull(),
     material: d.text({ length: 128 }).notNull(), // PLA, ABS, PETG, etc.
     color: d.text({ length: 64 }),
+    hexColor: d.text({ length: 7 }), // RGB hex color (e.g., #FF0000)
     diameter: d.real().notNull(), // 1.75mm or 2.85mm
     weight: d.real(), // in grams
     remainingWeight: d.real(), // remaining weight in grams
@@ -42,7 +42,6 @@ export const filaments = createTable(
     updatedAt: d.integer({ mode: "timestamp" }).$onUpdate(() => new Date()),
   }),
   (t) => [
-    index("filament_name_idx").on(t.name),
     index("filament_brand_idx").on(t.brand),
     index("filament_material_idx").on(t.material),
     index("filament_is_active_idx").on(t.isActive),

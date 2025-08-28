@@ -21,7 +21,7 @@ export const filamentRouter = createTRPCRouter({
       let whereConditions = [];
 
       if (search) {
-        whereConditions.push(like(filaments.name, `%${search}%`));
+        whereConditions.push(like(filaments.brand, `%${search}%`));
       }
 
       if (material) {
@@ -61,7 +61,6 @@ export const filamentRouter = createTRPCRouter({
   create: publicProcedure
     .input(
       z.object({
-        name: z.string().min(1).max(256),
         brand: z.string().min(1).max(128),
         material: z.string().min(1).max(128),
         color: z.string().max(64).optional(),

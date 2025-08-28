@@ -62,6 +62,28 @@ export const colors = [
   "Pastel",
 ];
 
+// Color to hex mapping
+export const colorToHex: Record<string, string> = {
+  Black: "#000000",
+  White: "#FFFFFF",
+  Gray: "#808080",
+  Silver: "#C0C0C0",
+  Red: "#FF0000",
+  Blue: "#0000FF",
+  Green: "#00FF00",
+  Yellow: "#FFFF00",
+  Orange: "#FFA500",
+  Purple: "#800080",
+  Pink: "#FFC0CB",
+  Brown: "#A52A2A",
+  Transparent: "#FFFFFF",
+  "Glow in Dark": "#00FF00",
+  Metallic: "#C0C0C0",
+  Pearl: "#F0E68C",
+  Neon: "#FF1493",
+  Pastel: "#FFB6C1",
+};
+
 export const diameters = [1.75, 2.85];
 
 // Material-specific temperature and print settings
@@ -234,10 +256,10 @@ export function generateFilament() {
   const price = getRandomNumber(15, 150);
 
   const filament = {
-    name: `${brand} ${material} ${color}`,
     brand,
     material,
     color,
+    hexColor: colorToHex[color],
     diameter,
     weight,
     remainingWeight,
@@ -255,7 +277,7 @@ export function generateFilament() {
       settings.retractionSpeed.max,
     ),
     flowRate: getRandomNumber(settings.flowRate.min, settings.flowRate.max),
-    notes: getRandomBoolean() ? getRandomNotes(material!, brand!) : undefined,
+    notes: getRandomBoolean() ? getRandomNotes(material, brand) : undefined,
     isActive: getRandomBoolean(),
   };
 
@@ -315,7 +337,7 @@ async function seedDatabase() {
     }
 
     // Generate mock data
-    const numberOfFilaments = parseInt(process.argv[2]) || 50;
+    const numberOfFilaments = parseInt(process.argv[2] || "50") || 50;
     console.log(`📦 Generating ${numberOfFilaments} filament entries...`);
 
     const mockFilaments = [];
@@ -335,21 +357,21 @@ async function seedDatabase() {
     // Insert data in batches to avoid SQLite "too many SQL variables" error
     const batchSize = 500; // SQLite can handle ~500 rows per batch safely
     let totalInserted = 0;
-    
+
     for (let i = 0; i < mockFilaments.length; i += batchSize) {
       const batch = mockFilaments.slice(i, i + batchSize);
       await drizzleDb.insert(filaments).values(batch);
       totalInserted += batch.length;
-      
-      console.log(`📦 Inserted batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(mockFilaments.length / batchSize)} (${batch.length} records)`);
+
+      console.log(
+        `📦 Inserted batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(mockFilaments.length / batchSize)} (${batch.length} records)`,
+      );
     }
 
     console.log(
       `✅ Successfully seeded database with ${totalInserted} filament entries!`,
     );
-    console.log(
-      `📊 Database now contains ${totalInserted} total entries.`,
-    );
+    console.log(`📊 Database now contains ${totalInserted} total entries.`);
 
     // Show some statistics
     const materialStats = await drizzleDb

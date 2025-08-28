@@ -1,45 +1,17 @@
 "use client";
 
 import type { ColumnDef } from "@tanstack/react-table";
-import { Button } from "@/components/ui/button";
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
-import { Edit, Trash2 } from "lucide-react";
+import type { Filament } from "./filament-table";
 
-export type Filament = {
-  id: number;
-  name: string;
-  brand: string;
-  material: string;
-  color: string | null;
-  diameter: number;
-  weight: number | null;
-  remainingWeight: number | null;
-  price: number | null;
-  purchaseDate: Date | null;
-  nozzleTemp: number | null;
-  bedTemp: number | null;
-  printSpeed: number | null;
-  retractionDistance: number | null;
-  retractionSpeed: number | null;
-  flowRate: number | null;
-  notes: string | null;
-  isActive: boolean;
-  createdAt: Date;
-  updatedAt: Date | null;
+// Add computed search field for multi-field fuzzy search
+export const getFilamentSearchText = (filament: Filament): string => {
+  return [filament.brand, filament.material, filament.color || ""]
+    .join(" ")
+    .toLowerCase();
 };
 
 export const filamentColumns: ColumnDef<Filament>[] = [
-  {
-    accessorKey: "name",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Name" />
-    ),
-    cell: ({ row }) => (
-      <div className="font-medium">{row.getValue("name")}</div>
-    ),
-    enableSorting: true,
-    enableHiding: false,
-  },
   {
     accessorKey: "brand",
     header: ({ column }) => (
@@ -47,7 +19,8 @@ export const filamentColumns: ColumnDef<Filament>[] = [
     ),
     cell: ({ row }) => <div>{row.getValue("brand")}</div>,
     enableSorting: true,
-    enableHiding: true,
+    enableHiding: false,
+    enableColumnFilter: true,
   },
   {
     accessorKey: "material",
@@ -56,7 +29,8 @@ export const filamentColumns: ColumnDef<Filament>[] = [
     ),
     cell: ({ row }) => <div>{row.getValue("material")}</div>,
     enableSorting: true,
-    enableHiding: true,
+    enableHiding: false,
+    enableColumnFilter: true,
   },
   {
     accessorKey: "color",
@@ -64,10 +38,34 @@ export const filamentColumns: ColumnDef<Filament>[] = [
       <DataTableColumnHeader column={column} title="Color" />
     ),
     cell: ({ row }) => {
-      const color = row.getValue("color");
+      const color = row.getValue("color") as string | null;
       return <div>{color ?? "-"}</div>;
     },
     enableSorting: true,
+    enableHiding: true,
+    enableColumnFilter: true,
+  },
+  {
+    accessorKey: "hexColor",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Hex Color" />
+    ),
+    cell: ({ row }) => {
+      const hexColor = row.getValue("hexColor") as string | null;
+      if (!hexColor) return <div>-</div>;
+
+      return (
+        <div className="flex items-center gap-2">
+          <div
+            className="h-4 w-4 rounded border border-gray-300"
+            style={{ backgroundColor: hexColor }}
+            title={hexColor}
+          />
+          <span className="font-mono text-sm">{hexColor}</span>
+        </div>
+      );
+    },
+    enableSorting: false,
     enableHiding: true,
   },
   {
@@ -79,31 +77,7 @@ export const filamentColumns: ColumnDef<Filament>[] = [
       const diameter = row.getValue("diameter") as number;
       return <div>{diameter}mm</div>;
     },
-    enableSorting: true,
-    enableHiding: true,
-  },
-  {
-    accessorKey: "weight",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Weight" />
-    ),
-    cell: ({ row }) => {
-      const weight = row.getValue("weight");
-      const remainingWeight = row.original.remainingWeight;
-
-      if (remainingWeight && weight) {
-        return (
-          <div>
-            {remainingWeight}g / {weight}g
-          </div>
-        );
-      } else if (weight) {
-        return <div>{weight}g</div>;
-      } else {
-        return <div>-</div>;
-      }
-    },
-    enableSorting: true,
+    enableSorting: false,
     enableHiding: true,
   },
   {
@@ -115,7 +89,7 @@ export const filamentColumns: ColumnDef<Filament>[] = [
       const temp = row.getValue("nozzleTemp");
       return <div>{temp ? `${temp}°C` : "-"}</div>;
     },
-    enableSorting: true,
+    enableSorting: false,
     enableHiding: true,
   },
   {
@@ -127,42 +101,7 @@ export const filamentColumns: ColumnDef<Filament>[] = [
       const temp = row.getValue("bedTemp");
       return <div>{temp ? `${temp}°C` : "-"}</div>;
     },
-    enableSorting: true,
-    enableHiding: true,
-  },
-  {
-    accessorKey: "isActive",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Status" />
-    ),
-    cell: ({ row }) => {
-      const isActive = row.getValue("isActive") as boolean;
-      return (
-        <span
-          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-            isActive ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
-          }`}
-        >
-          {isActive ? "Active" : "Inactive"}
-        </span>
-      );
-    },
-    enableSorting: true,
-    enableHiding: true,
-  },
-  {
-    id: "actions",
-    header: "Actions",
-    cell: ({ row }) => {
-      return (
-        <div className="flex gap-2">
-          <Button size="sm" variant="outline">
-            <Edit className="h-4 w-4" />
-          </Button>
-        </div>
-      );
-    },
     enableSorting: false,
-    enableHiding: false,
+    enableHiding: true,
   },
 ];
