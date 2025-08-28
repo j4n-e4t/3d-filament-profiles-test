@@ -1,7 +1,7 @@
 #!/usr/bin/env tsx
 
-import { createClient } from "@libsql/client";
-import { drizzle } from "drizzle-orm/libsql";
+import "dotenv/config";
+import { db } from "../src/server/db";
 import { filaments } from "../src/server/db/schema";
 
 // Mock data arrays
@@ -260,10 +260,10 @@ export function generateFilament() {
     material,
     color,
     hexColor: colorToHex[color],
-    diameter,
-    weight,
-    remainingWeight,
-    price,
+    diameter: diameter.toString(), // Convert to string as schema expects numeric
+    weight: weight.toString(), // Convert to string as schema expects numeric
+    remainingWeight: remainingWeight.toString(), // Convert to string as schema expects numeric
+    price: price.toString(), // Convert to string as schema expects numeric
     purchaseDate: getRandomDate(),
     nozzleTemp: getRandomInt(settings.nozzleTemp.min, settings.nozzleTemp.max),
     bedTemp: getRandomInt(settings.bedTemp.min, settings.bedTemp.max),
@@ -271,12 +271,15 @@ export function generateFilament() {
     retractionDistance: getRandomNumber(
       settings.retractionDistance.min,
       settings.retractionDistance.max,
-    ),
+    ).toString(), // Convert to string as schema expects numeric
     retractionSpeed: getRandomNumber(
       settings.retractionSpeed.min,
       settings.retractionSpeed.max,
-    ),
-    flowRate: getRandomNumber(settings.flowRate.min, settings.flowRate.max),
+    ).toString(), // Convert to string as schema expects numeric
+    flowRate: getRandomNumber(
+      settings.flowRate.min,
+      settings.flowRate.max,
+    ).toString(), // Convert to string as schema expects numeric
     notes: getRandomBoolean() ? getRandomNotes(material, brand) : undefined,
     isActive: getRandomBoolean(),
   };
@@ -307,16 +310,8 @@ async function seedDatabase() {
   try {
     console.log("🌱 Starting database seeding...");
 
-    // Get database URL from environment or use default
-    const databaseUrl = process.env.DATABASE_URL || "file:db.sqlite";
-    console.log(`🔗 Connecting to database: ${databaseUrl}`);
-
-    // Connect to the database
-    const client = createClient({ url: databaseUrl });
-    const drizzleDb = drizzle(client);
-
     // Check if we already have data
-    const existingCount = await drizzleDb
+    const existingCount = await db
       .select({ count: filaments.id })
       .from(filaments);
 
@@ -350,17 +345,17 @@ async function seedDatabase() {
 
     // If force flag is used, clear existing data first
     if (process.argv.includes("--force")) {
-      await drizzleDb.delete(filaments);
+      await db.delete(filaments);
       console.log("🗑️  Cleared existing data.");
     }
 
-    // Insert data in batches to avoid SQLite "too many SQL variables" error
-    const batchSize = 500; // SQLite can handle ~500 rows per batch safely
+    // Insert data in batches to avoid potential memory issues
+    const batchSize = 1000; // PostgreSQL can handle larger batches than SQLite
     let totalInserted = 0;
 
     for (let i = 0; i < mockFilaments.length; i += batchSize) {
       const batch = mockFilaments.slice(i, i + batchSize);
-      await drizzleDb.insert(filaments).values(batch);
+      await db.insert(filaments).values(batch);
       totalInserted += batch.length;
 
       console.log(
@@ -374,7 +369,7 @@ async function seedDatabase() {
     console.log(`📊 Database now contains ${totalInserted} total entries.`);
 
     // Show some statistics
-    const materialStats = await drizzleDb
+    const materialStats = await db
       .select({ material: filaments.material, count: filaments.id })
       .from(filaments)
       .groupBy(filaments.material);
@@ -386,7 +381,7 @@ async function seedDatabase() {
       }
     });
 
-    const brandStats = await drizzleDb
+    const brandStats = await db
       .select({ brand: filaments.brand, count: filaments.id })
       .from(filaments)
       .groupBy(filaments.brand);

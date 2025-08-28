@@ -26,6 +26,15 @@ export default async function HomePage() {
         <h1 className="mb-2 text-4xl font-bold text-gray-900">
           3D Filament Profiles Mock
         </h1>
+
+        <Button
+          onClick={async () => {
+            "use server";
+            revalidatePath("/");
+          }}
+        >
+          Refresh
+        </Button>
       </div>
       <Suspense fallback={<div>Loading...</div>}>
         <FilamentTable data={filamentData} />
