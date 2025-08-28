@@ -1,4 +1,9 @@
+import { Suspense } from "react";
 import { FilamentTable } from "./_components/filament-table";
+import { Button } from "@/components/ui/button";
+import { revalidatePath } from "next/cache";
+
+export const experimental_ppr = true;
 
 export default function HomePage() {
   return (
@@ -8,8 +13,17 @@ export default function HomePage() {
           3D Filament Profiles Mock
         </h1>
       </div>
-
-      <FilamentTable />
+      <Button
+        onClick={async () => {
+          "use server";
+          revalidatePath("/");
+        }}
+      >
+        clear cache
+      </Button>
+      <Suspense fallback={<div>Loading...</div>}>
+        <FilamentTable />
+      </Suspense>
     </main>
   );
 }

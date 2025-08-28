@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "next build",
+    "build": "next build --turbo",
     "check": "next lint && tsc --noEmit",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
@@ -40,7 +40,7 @@
     "clsx": "^2.1.1",
     "drizzle-orm": "^0.41.0",
     "lucide-react": "^0.542.0",
-    "next": "^15.2.3",
+    "next": "15.5.1-canary.16",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "server-only": "^0.0.1",
