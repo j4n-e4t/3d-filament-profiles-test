@@ -1,7 +1,7 @@
 import type { Filament } from "@/app/_components/filament-table";
 import { createSupabaseServerAdminClient } from "./server";
 
-export async function SERVER_getFullFilamentTableData() {
+export async function getFullFilamentTableData() {
   const startTime = performance.now();
   const supabase = await createSupabaseServerAdminClient();
 
@@ -18,8 +18,6 @@ export async function SERVER_getFullFilamentTableData() {
   const allData: Filament[] = [];
 
   for (let i = 0; i < numRequests; i++) {
-    const chunkStartTime = performance.now();
-
     const { data: chunkData, error } = await supabase
       .from("filament")
       .select("*")
@@ -35,8 +33,9 @@ export async function SERVER_getFullFilamentTableData() {
   const totalTime = performance.now() - startTime;
 
   return {
-    data: allData,
+    data: allData.reverse(),
     total: count,
     totalTime,
+    timestamp: new Date().toISOString(),
   };
 }

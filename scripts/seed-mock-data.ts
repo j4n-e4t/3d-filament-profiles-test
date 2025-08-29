@@ -246,6 +246,14 @@ export function getRandomDate(): Date {
   );
 }
 
+// Helper function to generate a random hex color
+export function getRandomHexColor(): string {
+  const hex = Math.floor(Math.random() * 0xffffff)
+    .toString(16)
+    .padStart(6, "0");
+  return `#${hex}`;
+}
+
 // Generate a single filament entry
 export function generateFilament() {
   const material = getRandomItem(materials);
@@ -261,19 +269,34 @@ export function generateFilament() {
   // Generate realistic price per kg
   const price = getRandomNumber(15, 150);
 
+  // Randomize hex color: 70% from map, 30% fully random
+  const hexColor =
+    Math.random() > 0.3 ? colorToHex[color] : getRandomHexColor();
+
   const filament = {
     brand,
     material,
     color,
-    hex_color: colorToHex[color],
+    hex_color: hexColor,
     diameter,
-    weight: Math.round(weight * 100) / 100, // Round to 2 decimal places
+    weight: Math.round(weight * 100) / 100,
     remaining_weight: Math.round(remainingWeight * 100) / 100,
     price: Math.round(price * 100) / 100,
     purchase_date: getRandomDate().toISOString(),
-    nozzle_temp: getRandomInt(settings.nozzleTemp.min, settings.nozzleTemp.max),
-    bed_temp: getRandomInt(settings.bedTemp.min, settings.bedTemp.max),
+
+    // Randomized temperatures (floats with 1 decimal place)
+    nozzle_temp:
+      Math.round(
+        getRandomNumber(settings.nozzleTemp.min, settings.nozzleTemp.max) * 10,
+      ) / 10,
+    bed_temp:
+      Math.round(
+        getRandomNumber(settings.bedTemp.min, settings.bedTemp.max) * 10,
+      ) / 10,
+
+    // Keep print speed as integer
     print_speed: getRandomInt(settings.printSpeed.min, settings.printSpeed.max),
+
     retraction_distance:
       Math.round(
         getRandomNumber(
@@ -292,6 +315,7 @@ export function generateFilament() {
       Math.round(
         getRandomNumber(settings.flowRate.min, settings.flowRate.max) * 1000,
       ) / 1000,
+
     notes: getRandomBoolean() ? getRandomNotes(material, brand) : null,
     is_active: getRandomBoolean(),
   };

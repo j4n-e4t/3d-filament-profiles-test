@@ -46,12 +46,12 @@ export const filamentColumns: ColumnDef<Filament>[] = [
     enableColumnFilter: true,
   },
   {
-    accessorKey: "hexColor",
+    accessorKey: "hex_color",
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Hex Color" />
     ),
     cell: ({ row }) => {
-      const hexColor = row.getValue("hexColor") as string | null;
+      const hexColor = row.getValue("hex_color") as string | null;
       if (!hexColor) return <div>-</div>;
 
       return (
@@ -81,24 +81,24 @@ export const filamentColumns: ColumnDef<Filament>[] = [
     enableHiding: true,
   },
   {
-    accessorKey: "nozzleTemp",
+    accessorKey: "nozzle_temp",
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Nozzle Temp" />
     ),
     cell: ({ row }) => {
-      const temp = row.getValue("nozzleTemp");
+      const temp = row.getValue("nozzle_temp");
       return <div>{temp ? `${temp}°C` : "-"}</div>;
     },
     enableSorting: false,
     enableHiding: true,
   },
   {
-    accessorKey: "bedTemp",
+    accessorKey: "bed_temp",
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Bed Temp" />
     ),
     cell: ({ row }) => {
-      const temp = row.getValue("bedTemp");
+      const temp = row.getValue("bed_temp");
       return <div>{temp ? `${temp}°C` : "-"}</div>;
     },
     enableSorting: false,
