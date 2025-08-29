@@ -3,15 +3,10 @@ import { Suspense } from "react";
 import { FilamentTable, type Filament } from "./_components/filament-table";
 import { Button } from "@/components/ui/button";
 import { revalidatePath } from "next/cache";
-import { createSupabaseServerAdminClient } from "@/utils/supabase/server";
+import { SERVER_getFullFilamentTableData } from "@/utils/supabase/queries";
 
 export default async function HomePage() {
-  const supabase = await createSupabaseServerAdminClient();
-  const { data }: { data: Filament[] | null } = await supabase
-    .from("filament")
-    .select("*")
-    .limit(11000);
-  console.log(data);
+  const { data, total, totalTime } = await SERVER_getFullFilamentTableData();
 
   return (
     <main className="container mx-auto px-4 py-8">
@@ -32,6 +27,7 @@ export default async function HomePage() {
       <Suspense fallback={<div>Loading...</div>}>
         <FilamentTable data={data} />
       </Suspense>
+      <p>Total time of last db query: {totalTime.toFixed(2)}ms</p>
     </main>
   );
 }
