@@ -31,6 +31,7 @@ export async function createSupabaseServerClient() {
 }
 // the admin client that doesn't get the cookies from the request and therefore has full access to the database
 // it can access the db without forcing the page to be dynamic and therefore it can be cached by next
+// DO NOT USE THIS TO QUERY USER SPECIFIC DATA!!!!
 export async function createSupabaseServerAdminClient() {
   return createClient(
     env.NEXT_PUBLIC_SUPABASE_URL,
