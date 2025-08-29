@@ -1,24 +1,17 @@
 import { Suspense } from "react";
-import { FilamentTable } from "./_components/filament-table";
+import { FilamentTable, type Filament } from "./_components/filament-table";
 import { Button } from "@/components/ui/button";
 import { revalidatePath } from "next/cache";
-import { db } from "@/server/db";
-import { filaments } from "@/server/db/schema";
+import { createClient } from "@/utils/supabase/server";
 
 export const experimental_ppr = true;
 
-const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
-async function getFilamentData() {
-  // mock slow db query
-  const data = await wait(1).then(() =>
-    db.select().from(filaments).limit(11000),
-  );
-  return data;
-}
-
 export default async function HomePage() {
-  const filamentData = await getFilamentData();
+  const supabase = await createClient();
+  const { data }: { data: Filament[] | null } = await supabase
+    .from("filament")
+    .select("*");
+  console.log(data);
 
   return (
     <main className="container mx-auto px-4 py-8">
@@ -37,7 +30,7 @@ export default async function HomePage() {
         </Button>
       </div>
       <Suspense fallback={<div>Loading...</div>}>
-        <FilamentTable data={filamentData} />
+        <FilamentTable data={data} />
       </Suspense>
     </main>
   );
