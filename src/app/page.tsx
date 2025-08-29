@@ -1,16 +1,16 @@
+"use cache";
 import { Suspense } from "react";
 import { FilamentTable, type Filament } from "./_components/filament-table";
 import { Button } from "@/components/ui/button";
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/utils/supabase/server";
-
-export const experimental_ppr = true;
+import { createSupabaseServerAdminClient } from "@/utils/supabase/server";
 
 export default async function HomePage() {
-  const supabase = await createClient();
+  const supabase = await createSupabaseServerAdminClient();
   const { data }: { data: Filament[] | null } = await supabase
     .from("filament")
-    .select("*");
+    .select("*")
+    .limit(11000);
   console.log(data);
 
   return (

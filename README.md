@@ -19,3 +19,9 @@ The key problem is the use of RSC (React Server Components) since the page only 
 ## Notes
 
 This is a very basic example of how to improve the performance of a Next.js app that works with this amount of data. Since the key point of this mock is to demonstrate the performance improvement, the entire site is "vibe coded" with cursor, so I would not recommend using this as reference.
+
+## ToDo
+
+- Make FilamentTable a Server Component
+- Fetch data on page level
+- "use cache" the FilamentTable component

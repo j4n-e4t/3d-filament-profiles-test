@@ -1,8 +1,14 @@
 #!/usr/bin/env tsx
 
 import "dotenv/config";
-import { db } from "../src/server/db";
-import { filaments } from "../src/server/db/schema";
+import { createClient } from "@supabase/supabase-js";
+import { env } from "../src/env";
+
+// Initialize Supabase client with service role key for admin operations
+const supabase = createClient(
+  env.NEXT_PUBLIC_SUPABASE_URL,
+  env.SUPABASE_SERVICE_ROLE_KEY,
+);
 
 // Mock data arrays
 export const brands = [
@@ -259,29 +265,35 @@ export function generateFilament() {
     brand,
     material,
     color,
-    hexColor: colorToHex[color],
-    diameter: diameter.toString(), // Convert to string as schema expects numeric
-    weight: weight.toString(), // Convert to string as schema expects numeric
-    remainingWeight: remainingWeight.toString(), // Convert to string as schema expects numeric
-    price: price.toString(), // Convert to string as schema expects numeric
-    purchaseDate: getRandomDate(),
-    nozzleTemp: getRandomInt(settings.nozzleTemp.min, settings.nozzleTemp.max),
-    bedTemp: getRandomInt(settings.bedTemp.min, settings.bedTemp.max),
-    printSpeed: getRandomInt(settings.printSpeed.min, settings.printSpeed.max),
-    retractionDistance: getRandomNumber(
-      settings.retractionDistance.min,
-      settings.retractionDistance.max,
-    ).toString(), // Convert to string as schema expects numeric
-    retractionSpeed: getRandomNumber(
-      settings.retractionSpeed.min,
-      settings.retractionSpeed.max,
-    ).toString(), // Convert to string as schema expects numeric
-    flowRate: getRandomNumber(
-      settings.flowRate.min,
-      settings.flowRate.max,
-    ).toString(), // Convert to string as schema expects numeric
-    notes: getRandomBoolean() ? getRandomNotes(material, brand) : undefined,
-    isActive: getRandomBoolean(),
+    hex_color: colorToHex[color],
+    diameter,
+    weight: Math.round(weight * 100) / 100, // Round to 2 decimal places
+    remaining_weight: Math.round(remainingWeight * 100) / 100,
+    price: Math.round(price * 100) / 100,
+    purchase_date: getRandomDate().toISOString(),
+    nozzle_temp: getRandomInt(settings.nozzleTemp.min, settings.nozzleTemp.max),
+    bed_temp: getRandomInt(settings.bedTemp.min, settings.bedTemp.max),
+    print_speed: getRandomInt(settings.printSpeed.min, settings.printSpeed.max),
+    retraction_distance:
+      Math.round(
+        getRandomNumber(
+          settings.retractionDistance.min,
+          settings.retractionDistance.max,
+        ) * 100,
+      ) / 100,
+    retraction_speed:
+      Math.round(
+        getRandomNumber(
+          settings.retractionSpeed.min,
+          settings.retractionSpeed.max,
+        ) * 100,
+      ) / 100,
+    flow_rate:
+      Math.round(
+        getRandomNumber(settings.flowRate.min, settings.flowRate.max) * 1000,
+      ) / 1000,
+    notes: getRandomBoolean() ? getRandomNotes(material, brand) : null,
+    is_active: getRandomBoolean(),
   };
 
   return filament;
@@ -308,21 +320,21 @@ function getRandomNotes(material: string, brand: string): string {
 // Main function to seed the database
 async function seedDatabase() {
   try {
-    console.log("🌱 Starting database seeding...");
+    console.log("🌱 Starting Supabase database seeding...");
 
     // Check if we already have data
-    const existingCount = await db
-      .select({ count: filaments.id })
-      .from(filaments);
+    const { data: existingData, error: countError } = await supabase
+      .from("filament")
+      .select("id")
+      .limit(1);
 
-    if (
-      existingCount.length > 0 &&
-      existingCount[0]?.count !== undefined &&
-      existingCount[0].count > 0
-    ) {
-      console.log(
-        `⚠️  Database already contains ${existingCount[0].count} filaments.`,
-      );
+    if (countError) {
+      console.error("❌ Error checking existing data:", countError);
+      process.exit(1);
+    }
+
+    if (existingData && existingData.length > 0) {
+      console.log("⚠️  Database already contains filament data.");
       const shouldContinue = process.argv.includes("--force");
       if (!shouldContinue) {
         console.log("Use --force flag to overwrite existing data.");
@@ -341,21 +353,37 @@ async function seedDatabase() {
     }
 
     // Insert data into database
-    console.log("💾 Inserting data into database...");
+    console.log("💾 Inserting data into Supabase...");
 
     // If force flag is used, clear existing data first
     if (process.argv.includes("--force")) {
-      await db.delete(filaments);
+      const { error: deleteError } = await supabase
+        .from("filament")
+        .delete()
+        .neq("id", 0); // Delete all records (id > 0)
+
+      if (deleteError) {
+        console.error("❌ Error clearing existing data:", deleteError);
+        process.exit(1);
+      }
       console.log("🗑️  Cleared existing data.");
     }
 
     // Insert data in batches to avoid potential memory issues
-    const batchSize = 1000; // PostgreSQL can handle larger batches than SQLite
+    const batchSize = 100; // Supabase recommended batch size
     let totalInserted = 0;
 
     for (let i = 0; i < mockFilaments.length; i += batchSize) {
       const batch = mockFilaments.slice(i, i + batchSize);
-      await db.insert(filaments).values(batch);
+      const { error: insertError } = await supabase
+        .from("filament")
+        .insert(batch);
+
+      if (insertError) {
+        console.error("❌ Error inserting batch:", insertError);
+        process.exit(1);
+      }
+
       totalInserted += batch.length;
 
       console.log(
@@ -364,34 +392,49 @@ async function seedDatabase() {
     }
 
     console.log(
-      `✅ Successfully seeded database with ${totalInserted} filament entries!`,
+      `✅ Successfully seeded Supabase database with ${totalInserted} filament entries!`,
     );
-    console.log(`📊 Database now contains ${totalInserted} total entries.`);
 
     // Show some statistics
-    const materialStats = await db
-      .select({ material: filaments.material, count: filaments.id })
-      .from(filaments)
-      .groupBy(filaments.material);
+    const { data: materialStats, error: materialError } = await supabase
+      .from("filament")
+      .select("material")
+      .eq("is_active", true);
 
-    console.log("\n📈 Material distribution:");
-    materialStats.forEach((stat) => {
-      if (stat.material && stat.count !== undefined) {
-        console.log(`   ${stat.material}: ${stat.count} filaments`);
-      }
-    });
+    if (!materialError && materialStats) {
+      const materialCounts = materialStats.reduce(
+        (acc, item) => {
+          acc[item.material] = (acc[item.material] || 0) + 1;
+          return acc;
+        },
+        {} as Record<string, number>,
+      );
 
-    const brandStats = await db
-      .select({ brand: filaments.brand, count: filaments.id })
-      .from(filaments)
-      .groupBy(filaments.brand);
+      console.log("\n📈 Material distribution:");
+      Object.entries(materialCounts).forEach(([material, count]) => {
+        console.log(`   ${material}: ${count} filaments`);
+      });
+    }
 
-    console.log("\n🏷️  Brand distribution:");
-    brandStats.forEach((stat) => {
-      if (stat.brand && stat.count !== undefined) {
-        console.log(`   ${stat.brand}: ${stat.count} filaments`);
-      }
-    });
+    const { data: brandStats, error: brandError } = await supabase
+      .from("filament")
+      .select("brand")
+      .eq("is_active", true);
+
+    if (!brandError && brandStats) {
+      const brandCounts = brandStats.reduce(
+        (acc, item) => {
+          acc[item.brand] = (acc[item.brand] || 0) + 1;
+          return acc;
+        },
+        {} as Record<string, number>,
+      );
+
+      console.log("\n🏷️  Brand distribution:");
+      Object.entries(brandCounts).forEach(([brand, count]) => {
+        console.log(`   ${brand}: ${count} filaments`);
+      });
+    }
 
     console.log("\n🎉 Seeding completed successfully!");
   } catch (error) {
