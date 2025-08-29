@@ -24,7 +24,7 @@ export default async function HomePage() {
     <main className="container mx-auto px-4 py-8">
       <div className="mb-8">
         <h1 className="mb-2 text-4xl font-bold text-gray-900">
-          3D Filament Profiles Mock
+          3D Filament Profiles Mock (Next.js + Neon + Vercel)
         </h1>
 
         <Button
